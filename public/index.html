@@ -220,5 +220,27 @@
     <script src="./js/urgence.js" defer></script>
     <script src="./js/offline.js" defer></script>
     <script src="./js/app.js" defer></script>
+    <script>
+        // Fallback click handler for the header 'SE CONNECTER' button.
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest && e.target.closest('#btn-auth');
+            if (!btn) return;
+            e.preventDefault();
+            if (window.auth && typeof window.auth.showAuthScreen === 'function') {
+                try { window.auth.showAuthScreen(); } catch (err) { console.error('auth.showAuthScreen error', err); }
+                return;
+            }
+            // Retry a few times if auth not yet defined
+            let attempts = 0;
+            const iv = setInterval(() => {
+                attempts += 1;
+                if (window.auth && typeof window.auth.showAuthScreen === 'function') {
+                    clearInterval(iv);
+                    try { window.auth.showAuthScreen(); } catch (err) { console.error('auth.showAuthScreen error', err); }
+                }
+                if (attempts > 20) clearInterval(iv);
+            }, 150);
+        }, false);
+    </script>
 </body>
 </html>
