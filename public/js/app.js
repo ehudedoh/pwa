@@ -13,6 +13,9 @@ const app = {
             // auth button in header
             const authBtn = document.getElementById('btn-auth');
             if (authBtn) authBtn.onclick = (e) => { e.stopPropagation(); auth.showAuthScreen(); };
+            // header logout icon: open registration form instead of immediate logout
+            const headerLogout = document.getElementById('header-logout');
+            if (headerLogout) headerLogout.onclick = (e) => { e.stopPropagation(); auth.showAuthScreen('register'); };
         } catch (error) {
             console.error("App init error:", error);
         }
