@@ -168,7 +168,7 @@ const database = {
         } catch (e) {
             this.handleError(e, 'list', path);
         }
-    }
+    },
 
     async getCooperatives() {
         const { collection, getDocs, query, where } = window.FirebaseSDK.firestore;
