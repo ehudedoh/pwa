@@ -49,4 +49,13 @@ async function testConnection() {
     }
   }
 }
-testConnection();
+window.firebaseReady = false;
+window.firebaseReadyPromise = (async () => {
+  try {
+    await testConnection();
+    window.firebaseReady = true;
+  } catch (e) {
+    console.warn('Firebase ready promise rejected', e);
+  }
+  return window.firebaseReady;
+})();
