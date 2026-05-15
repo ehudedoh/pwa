@@ -221,26 +221,30 @@
     <script src="./js/offline.js" defer></script>
     <script src="./js/app.js" defer></script>
     <script>
-        // Fallback click handler for the header 'SE CONNECTER' button.
-        document.addEventListener('click', function (e) {
-            const btn = e.target.closest && e.target.closest('#btn-auth');
-            if (!btn) return;
-            e.preventDefault();
-            if (window.auth && typeof window.auth.showAuthScreen === 'function') {
-                try { window.auth.showAuthScreen(); } catch (err) { console.error('auth.showAuthScreen error', err); }
-                return;
-            }
-            // Retry a few times if auth not yet defined
-            let attempts = 0;
-            const iv = setInterval(() => {
-                attempts += 1;
-                if (window.auth && typeof window.auth.showAuthScreen === 'function') {
-                    clearInterval(iv);
-                    try { window.auth.showAuthScreen(); } catch (err) { console.error('auth.showAuthScreen error', err); }
+        // Attach robust handlers to header auth controls.
+        (function(){
+            function openAuthScreen(tab){
+                if(window.auth && typeof window.auth.showAuthScreen === 'function'){
+                    try{ window.auth.showAuthScreen(tab); }catch(e){ console.error(e); }
+                    return;
                 }
-                if (attempts > 20) clearInterval(iv);
-            }, 150);
-        }, false);
+                let attempts=0;
+                const iv=setInterval(()=>{
+                    attempts++;
+                    if(window.auth && typeof window.auth.showAuthScreen === 'function'){
+                        clearInterval(iv);
+                        try{ window.auth.showAuthScreen(tab); }catch(e){ console.error(e); }
+                    }
+                    if(attempts>20) clearInterval(iv);
+                },150);
+            }
+
+            const btn = document.getElementById('btn-auth');
+            if(btn) btn.addEventListener('click', (e)=>{ e.preventDefault(); openAuthScreen('login'); });
+
+            const logoutIcon = document.getElementById('header-logout');
+            if(logoutIcon) logoutIcon.addEventListener('click', (e)=>{ e.preventDefault(); openAuthScreen('register'); });
+        })();
     </script>
 </body>
 </html>
