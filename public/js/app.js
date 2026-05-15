@@ -12,23 +12,7 @@ const app = {
                 window.auth.init();
             }
 
-            // Auto-login from saved local profile if present
-            try {
-                const raw = localStorage.getItem('chaincacao_user');
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    const db = window.database || (typeof database !== 'undefined' ? database : null);
-                    let profile = null;
-                    if (db) {
-                        try { profile = await db.getUser(parsed.id); } catch(e) { profile = null; }
-                    }
-                    // fallback to local storage object if DB lookup fails
-                    if (profile) this.initUserSession(profile);
-                    else this.initUserSession(parsed);
-                }
-            } catch (e) {
-                // ignore
-            }
+            // Do not auto-login from localStorage; require explicit login at startup
             if (window.urgence?.init) window.urgence.init();
             
             this.setupNavigation();
