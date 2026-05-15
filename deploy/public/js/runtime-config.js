@@ -1,9 +1,9 @@
 window.__CHAINCACAO_CONFIG__ = {
-  "contractAddress": "0xEddB20c469652f928a0a33AFEA807a980bE8EBbF",
+  "contractAddress": "",
   "chainId": "137",
   "networkName": "Polygon Mainnet",
   "relayerUrl": "",
-  "firebaseApiKey": "AIzaSyCIuyy15SbpaSLmy1s8ntz-WlOqaQ4PwvA",
+  "firebaseApiKey": "",
   "firebaseProjectId": "gen-lang-client-0846821407",
   "firebaseAuthDomain": "gen-lang-client-0846821407.firebaseapp.com",
   "firebaseFirestoreDatabaseId": "ai-studio-9f533733-bd79-49db-97ba-3503bcaf4462",
