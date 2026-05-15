@@ -5,6 +5,7 @@ const app = {
             await database.init();
             offline.init();
             auth.init();
+            if (window.urgence?.init) window.urgence.init();
             
             this.setupNavigation();
             this.setupPWAInstall();

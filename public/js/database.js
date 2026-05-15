@@ -125,6 +125,22 @@ const database = {
         }
     },
 
+    async getLotsByFarmer(farmerId) {
+        const { collection, getDocs, query, where } = window.FirebaseSDK.firestore;
+        const path = 'lots';
+        try {
+            const q = query(collection(window.firebaseDB, path), where('farmerId', '==', farmerId));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => {
+                const data = doc.data();
+                if (data.timestamp && data.timestamp.toDate) data.timestamp = data.timestamp.toDate();
+                return data;
+            }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        } catch (e) {
+            this.handleError(e, 'list', path);
+        }
+    },
+
     async addTransfer(transfer) {
         const { collection, addDoc, serverTimestamp } = window.FirebaseSDK.firestore;
         const path = `lots/${transfer.lotId}/transfers`;

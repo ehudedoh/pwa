@@ -1,7 +1,7 @@
 const agriculteur = {
     async renderDashboard() {
         const user = auth.currentUser || { firstname: 'Agriculteur' };
-        const lots = await database.getAllLots();
+        const lots = user.id ? await database.getLotsByFarmer(user.id) : [];
         const totalWeight = lots.reduce((acc, lot) => acc + lot.weight, 0);
         
         const container = document.getElementById('agriculteur-dashboard');
@@ -47,7 +47,7 @@ const agriculteur = {
             </button>
             <h3 class="section-title">Historique des récoltes</h3>
             <div id="agri-lot-list">
-                ${lots.reverse().map(lot => `
+                ${(lots.slice().reverse()).map(lot => `
                     <div class="card" onclick="agriculteur.showDetails('${lot.id}')">
                         <div class="card-header">
                             <strong class="lot-id">${lot.id}</strong>
@@ -127,7 +127,7 @@ const agriculteur = {
                 
                 <div class="action-bar">
                     <button class="btn btn-outline" onclick="agriculteur.renderFormStep(1)">Retour</button>
-                    <button class="btn btn-primary" onclick="agriculteur.nextStep(3)">Valider</button>
+                    <button class="btn btn-primary" id="btn-lot-validate" onclick="agriculteur.nextStep(3)" ${this.formState.data.gps ? '' : 'disabled'}>Valider</button>
                 </div>
             `;
         }
@@ -157,8 +157,13 @@ const agriculteur = {
             this.formState.data.region = document.getElementById('f-region').value;
         }
         if (this.formState.step === 2 && next === 3) {
-            if (!this.formState.data.gps) return alert("GPS requis");
-            await this.saveLot();
+            if (!utils.validateGPS(this.formState.data.gps)) return alert("GPS requis");
+            try {
+                await this.saveLot();
+            } catch (error) {
+                alert(`Enregistrement impossible: ${error.message}`);
+                return;
+            }
         }
         this.renderFormStep(next);
     },
@@ -179,6 +184,9 @@ const agriculteur = {
         try {
             const pos = await window.ChainCacaoGPS.getCurrentPosition();
             this.formState.data.gps = pos;
+
+            const validateBtn = document.getElementById('btn-lot-validate');
+            if (validateBtn) validateBtn.disabled = false;
             
             display.innerHTML = `
                 <div class="gps-success">
@@ -226,6 +234,7 @@ const agriculteur = {
         });
 
         this.formState.data.id = id;
+        return id;
     },
 
     cancelForm() {
@@ -236,7 +245,12 @@ const agriculteur = {
     },
 
     async showDetails(id) {
+        const user = auth.currentUser || {};
         const lot = await database.getLot(id);
+        if (!lot) return alert('Lot introuvable');
+        if (user.role === 'AGR' && lot.farmerId !== user.id) {
+            return alert("Accès refusé: ce lot ne vous appartient pas.");
+        }
         app.showModal(`
             <h3>Détails Lot ${lot.id}</h3>
             <p><strong>Poids:</strong> ${lot.weight}kg</p>

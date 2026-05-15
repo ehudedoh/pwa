@@ -220,7 +220,8 @@ const cooperative = {
     cancelValidation() {
         document.getElementById('cooperative-details').classList.add('hidden');
         document.getElementById('cooperative-scanner').classList.remove('hidden');
-        document.getElementById('btn-scan').classList.remove('hidden');
+        const scanBtn = document.getElementById('btn-scan');
+        if (scanBtn) scanBtn.classList.remove('hidden');
         this.renderDashboard();
     },
 

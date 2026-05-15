@@ -106,7 +106,7 @@ const verificateur = {
                             <div class="timeline-dot"><i data-lucide="shield-check"></i></div>
                             <div class="timeline-content">
                                 <span class="actor">${t.actorId}</span>
-                                <h4>${t.type === 'CREATION' ? 'Récolte Enregistrée' : t.type === 'COOP_VALIDATION' ? 'Collecte & Contrôle' : 'Manifeste Export'}</h4>
+                                <h4>${t.type === 'CREATION' ? 'Récolte Enregistrée' : t.type === 'COOP_VALIDATION' ? 'Collecte & Contrôle' : t.type === 'URGENT_ALERT' ? 'Alerte Urgente' : 'Manifeste Export'}</h4>
                                 <div class="timeline-meta">
                                     <i data-lucide="clock"></i>
                                     <span>${utils.formatDate(t.timestamp)}</span>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chaincacao-v2';
+const CACHE_NAME = 'chaincacao-v3';
 const ASSETS = [
     './',
     './index.html',
@@ -19,6 +19,7 @@ const ASSETS = [
     './js/camera.js',
     './js/qrcode.js',
     './js/pdf.js',
+    './js/urgence.js',
     './js/offline.js',
     './js/firebase-init.js',
     './manifest.json',
