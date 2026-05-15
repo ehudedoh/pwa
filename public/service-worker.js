@@ -1,48 +1,59 @@
-const CACHE_NAME = 'chaincacao-v3';
-const ASSETS = [
+const CACHE_NAME = 'chaincacao-v4';
+const PRECACHE_ASSETS = [
     './',
     './index.html',
     './css/style.css',
-    './css/agriculteur.css',
-    './css/cooperative.css',
-    './css/exportateur.css',
-    './css/verificateur.css',
-    './js/app.js',
-    './js/utils.js',
-    './js/database.js',
-    './js/agriculteur.js',
-    './js/cooperative.js',
-    './js/exportateur.js',
-    './js/verificateur.js',
-    './js/blockchain.js',
-    './js/gps.js',
-    './js/camera.js',
-    './js/qrcode.js',
-    './js/pdf.js',
-    './js/urgence.js',
-    './js/offline.js',
-    './js/firebase-init.js',
     './manifest.json',
     './images/icons/icon-192x192.svg',
-    './images/icons/icon-512x512.svg',
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-    'https://cdn.jsdelivr.net/npm/idb@8/build/umd.js',
-    'https://unpkg.com/html5-qrcode',
-    'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+    './images/icons/icon-512x512.svg'
 ];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+        caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS))
     );
 });
 
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then(keys => Promise.all(
+            keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+        ))
+    );
+});
+
+// Stale-while-revalidate for scripts and CDN resources, cache-first for navigation
 self.addEventListener('fetch', (event) => {
+    const req = event.request;
+    const url = new URL(req.url);
+
+    // For navigation requests, prefer cache then network
+    if (req.mode === 'navigate') {
+        event.respondWith(
+            caches.match('./index.html').then(resp => resp || fetch(req))
+        );
+        return;
+    }
+
+    // For same-origin static assets: stale-while-revalidate
+    if (url.origin === self.location.origin && req.destination !== 'image') {
+        event.respondWith(
+            caches.open(CACHE_NAME).then(async cache => {
+                const cached = await cache.match(req);
+                const networkPromise = fetch(req).then(networkResp => {
+                    if (networkResp && networkResp.ok) cache.put(req, networkResp.clone());
+                    return networkResp;
+                }).catch(() => null);
+                return cached || networkPromise;
+            })
+        );
+        return;
+    }
+
+    // For cross-origin CDNs, try network first then fallback to cache
     event.respondWith(
-        caches.match(event.request).then((response) => {
-            return response || fetch(event.request);
-        })
+        fetch(req).then(networkResp => {
+            return networkResp;
+        }).catch(() => caches.match(req))
     );
 });

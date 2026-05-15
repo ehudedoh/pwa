@@ -169,4 +169,35 @@ const database = {
             this.handleError(e, 'list', path);
         }
     }
+
+    async getCooperatives() {
+        const { collection, getDocs, query, where } = window.FirebaseSDK.firestore;
+        const path = 'users';
+        try {
+            const q = query(collection(window.firebaseDB, path), where('role', '==', 'COOP'));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => doc.data());
+        } catch (e) {
+            this.handleError(e, 'list', path);
+        }
+    },
+
+    async urgentTransfer({ lotId, targetCoopId, actorId, note }) {
+        const { doc, updateDoc } = window.FirebaseSDK.firestore;
+        const lotPath = `lots/${lotId}`;
+        try {
+            const updateData = { coopId: targetCoopId };
+            await updateDoc(doc(window.firebaseDB, lotPath), updateData);
+
+            await this.addTransfer({
+                lotId,
+                actorId: actorId || 'UNKNOWN',
+                type: 'URGENT_TRANSFER',
+                timestamp: new Date(),
+                data: { note, targetCoopId }
+            });
+        } catch (e) {
+            this.handleError(e, 'update', lotPath);
+        }
+    }
 };

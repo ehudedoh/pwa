@@ -22,6 +22,17 @@ const urgence = {
 
         const lotOptions = lots.map(lot => `<option value="${lot.id}">${lot.id} • ${lot.status}</option>`).join('');
 
+        // load cooperatives for possible transfer
+        let coopOptions = '<option value="">-- Aucun --</option>';
+        try {
+            const coops = await database.getCooperatives();
+            if (coops && coops.length) {
+                coopOptions += coops.map(c => `<option value="${c.id}">${c.name || c.id}</option>`).join('');
+            }
+        } catch (e) {
+            console.warn('Impossible de charger les coopératives', e);
+        }
+
         app.showModal(`
             <div style="padding:1rem">
                 <h3 style="margin-bottom:1rem; color:var(--primary)">Alerte urgence</h3>
@@ -37,6 +48,10 @@ const urgence = {
                         <option value="MEDIUM">Moyenne</option>
                         <option value="LOW">Faible</option>
                     </select>
+                </div>
+                <div class="input-group">
+                    <label>Transférer vers une coopérative (optionnel)</label>
+                    <select id="urgency-target-coop">${coopOptions}</select>
                 </div>
                 <div class="input-group">
                     <label>Message</label>
@@ -85,31 +100,41 @@ const urgence = {
                 }
 
                 try {
-                    const tx = await blockchain.submitTransaction({
-                        type: 'URGENT_ALERT',
-                        lotId,
-                        level,
-                        message,
-                        gps: gpsState.value,
-                        source: 'PWA'
-                    }, user.id);
+                        const targetCoopId = document.getElementById('urgency-target-coop')?.value;
 
-                    await database.addTransfer({
-                        lotId,
-                        actorId: user.id || 'UNKNOWN',
-                        type: 'URGENT_ALERT',
-                        timestamp: new Date(),
-                        hash: tx.hash,
-                        data: {
+                        // submit an on-chain record (if possible) for trace
+                        const tx = await blockchain.submitTransaction({
+                            type: targetCoopId ? 'URGENT_TRANSFER' : 'URGENT_ALERT',
+                            lotId,
                             level,
                             message,
                             gps: gpsState.value,
+                            targetCoopId: targetCoopId || null,
                             source: 'PWA'
-                        }
-                    });
+                        }, user.id);
 
-                    alert('Alerte envoyée et enregistrée.');
-                    document.querySelector('.close-modal')?.click();
+                        // if a transfer is requested, update lot coop and record transfer
+                        if (targetCoopId) {
+                            await database.urgentTransfer({ lotId, targetCoopId, actorId: user.id, note: message });
+                        }
+
+                        await database.addTransfer({
+                            lotId,
+                            actorId: user.id || 'UNKNOWN',
+                            type: targetCoopId ? 'URGENT_TRANSFER' : 'URGENT_ALERT',
+                            timestamp: new Date(),
+                            hash: tx.hash,
+                            data: {
+                                level,
+                                message,
+                                gps: gpsState.value,
+                                targetCoopId: targetCoopId || null,
+                                source: 'PWA'
+                            }
+                        });
+
+                        alert(targetCoopId ? 'Transfert d’urgence effectué et enregistré.' : 'Alerte envoyée et enregistrée.');
+                        document.querySelector('.close-modal')?.click();
                 } catch (error) {
                     alert(`Erreur lors de l'envoi: ${error.message}`);
                 }
