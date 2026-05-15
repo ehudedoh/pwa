@@ -268,3 +268,5 @@ window.onload = () => {
         app.setLoaded();
     });
 };
+
+try { window.app = app; } catch (e) { /* ignore in non-browser env */ }
