@@ -38,9 +38,9 @@ const app = {
                 // wait shortly for auth module to appear (race with deferred scripts)
                 if (!wauth && !document.getElementById('auth-screen')) {
                     const start = Date.now();
-                    while (!window.auth && (Date.now() - start) < 1000) {
+                    while (!window.auth && (Date.now() - start) < 3000) {
                         // eslint-disable-next-line no-await-in-loop
-                        await new Promise(r => setTimeout(r, 80));
+                        await new Promise(r => setTimeout(r, 100));
                     }
                     wauth = window.auth;
                 }
