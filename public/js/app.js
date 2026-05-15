@@ -7,6 +7,23 @@ const app = {
             if (window.auth && typeof window.auth.init === 'function') {
                 window.auth.init();
             }
+
+            // Auto-login from saved local profile if present
+            try {
+                const raw = localStorage.getItem('chaincacao_user');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    const db = window.database || (typeof database !== 'undefined' ? database : null);
+                    if (db) {
+                        const profile = await db.getUser(parsed.id);
+                        if (profile) {
+                            this.initUserSession(profile);
+                        }
+                    }
+                }
+            } catch (e) {
+                // ignore
+            }
             if (window.urgence?.init) window.urgence.init();
             
             this.setupNavigation();
