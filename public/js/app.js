@@ -34,7 +34,17 @@ const app = {
             };
             // Ensure auth screen appears if no user is logged in (deterministic after firebase ready)
             try {
-                const wauth = window.auth;
+                let wauth = window.auth;
+                // wait shortly for auth module to appear (race with deferred scripts)
+                if (!wauth && !document.getElementById('auth-screen')) {
+                    const start = Date.now();
+                    while (!window.auth && (Date.now() - start) < 1000) {
+                        // eslint-disable-next-line no-await-in-loop
+                        await new Promise(r => setTimeout(r, 80));
+                    }
+                    wauth = window.auth;
+                }
+
                 if ((typeof wauth === 'undefined' || !wauth || !wauth.currentUser) && !document.getElementById('auth-screen')) {
                     if (wauth && typeof wauth.showAuthScreen === 'function') {
                         wauth.showAuthScreen('login');
