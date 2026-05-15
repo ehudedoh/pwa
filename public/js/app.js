@@ -14,12 +14,13 @@ const app = {
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     const db = window.database || (typeof database !== 'undefined' ? database : null);
+                    let profile = null;
                     if (db) {
-                        const profile = await db.getUser(parsed.id);
-                        if (profile) {
-                            this.initUserSession(profile);
-                        }
+                        try { profile = await db.getUser(parsed.id); } catch(e) { profile = null; }
                     }
+                    // fallback to local storage object if DB lookup fails
+                    if (profile) this.initUserSession(profile);
+                    else this.initUserSession(parsed);
                 }
             } catch (e) {
                 // ignore
