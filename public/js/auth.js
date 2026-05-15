@@ -3,9 +3,10 @@ const auth = {
 
     async init() {
         // Wait for Firebase SDK visibility if necessary, though database.js handles it
+        const db = window.database || (typeof database !== 'undefined' ? database : null);
         const savedUser = JSON.parse(localStorage.getItem('chaincacao_user'));
         if (savedUser) {
-            const profile = await database.getUser(savedUser.id);
+            const profile = db ? await db.getUser(savedUser.id) : null;
             if (profile) {
                 this.handleSuccess(profile);
             } else {
@@ -131,7 +132,8 @@ const auth = {
 
         try {
             await signInWithEmailAndPassword(window.firebaseAuth, email, pass);
-            const user = await database.getUser(id);
+            const db = window.database || (typeof database !== 'undefined' ? database : null);
+            const user = db ? await db.getUser(id) : null;
             if (user) {
                 this.handleSuccess(user);
             } else {
@@ -184,7 +186,9 @@ const auth = {
                 createdAt: new Date().toISOString()
             };
 
-            await database.saveUser(newUser);
+            const db = window.database || (typeof database !== 'undefined' ? database : null);
+            if (!db) throw new Error('database not available');
+            await db.saveUser(newUser);
             alert(`Inscription réussie ! Votre identifiant est : ${userId}`);
             this.handleSuccess(newUser);
         } catch (e) {
@@ -192,7 +196,7 @@ const auth = {
             if (e.code === 'auth/operation-not-allowed') {
                 alert("ERREUR CONFIGURATION : Vous devez activer la méthode 'E-mail/Mot de passe' dans votre console Firebase (Onglet Authentication > Sign-in method).");
             } else {
-                alert("Erreur lors de l'inscription : " + e.message);
+                alert("Erreur lors de l'inscription : " + (e.message || e));
             }
         }
     },

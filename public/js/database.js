@@ -201,3 +201,6 @@ const database = {
         }
     }
 };
+
+// Expose database globally for other scripts and inline handlers
+try { window.database = database; } catch (e) { /* ignore when not in browser */ }
