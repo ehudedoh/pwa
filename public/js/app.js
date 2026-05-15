@@ -32,10 +32,18 @@ const app = {
             this.refreshIcons();
             // auth button in header
             const authBtn = document.getElementById('btn-auth');
-            if (authBtn) authBtn.onclick = (e) => { e.stopPropagation(); auth.showAuthScreen(); };
+            if (authBtn) authBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (window.auth && typeof window.auth.showAuthScreen === 'function') window.auth.showAuthScreen('login');
+                else this.showFallbackAuth();
+            };
             // header logout icon: open registration form instead of immediate logout
             const headerLogout = document.getElementById('header-logout');
-            if (headerLogout) headerLogout.onclick = (e) => { e.stopPropagation(); auth.showAuthScreen('register'); };
+            if (headerLogout) headerLogout.onclick = (e) => {
+                e.stopPropagation();
+                if (window.auth && typeof window.auth.showAuthScreen === 'function') window.auth.showAuthScreen('register');
+                else this.showFallbackAuth();
+            };
             // Ensure auth screen appears if no user is logged in (fallback for race conditions)
             const self = this;
             setTimeout(() => {
