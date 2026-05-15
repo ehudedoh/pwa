@@ -2,8 +2,8 @@ const auth = {
     currentUser: null,
 
     async init() {
-        // Wait for Firebase SDK visibility if necessary, though database.js handles it
-        const db = window.database || (typeof database !== 'undefined' ? database : null);
+        // Wait for Firebase SDK / database visibility if necessary
+        const db = await waitForDatabase(3000);
         const savedUser = JSON.parse(localStorage.getItem('chaincacao_user'));
         if (savedUser) {
             const profile = db ? await db.getUser(savedUser.id) : null;
@@ -16,6 +16,37 @@ const auth = {
             this.showAuthScreen();
         }
     },
+
+};
+
+// helper: wait for window.database to appear
+async function waitForDatabase(timeoutMs = 2000) {
+    if (window.database) return window.database;
+    if (typeof database !== 'undefined') return database;
+    const start = Date.now();
+    return new Promise((resolve, reject) => {
+        const iv = setInterval(() => {
+            if (window.database) {
+                clearInterval(iv);
+                return resolve(window.database);
+            }
+            if (typeof database !== 'undefined') {
+                clearInterval(iv);
+                return resolve(database);
+            }
+            if (Date.now() - start > timeoutMs) {
+                clearInterval(iv);
+                return resolve(null);
+            }
+        }, 100);
+    });
+}
+
+// restore export of auth
+try { window.auth = auth; } catch (e) {}
+
+// keep API shape for older callers
+export default auth;
 
     showAuthScreen() {
         if (document.getElementById('auth-screen')) return;
