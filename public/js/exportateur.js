@@ -217,7 +217,7 @@ const exportateur = {
                 lot.containerId = containerId;
                 await database.updateLot(lot);
                 
-                const tx = await blockchain.simulateTransaction({ action: 'EXPORT_COMPLETE', containerId }, user.id);
+                const tx = await blockchain.submitTransaction({ action: 'EXPORT_COMPLETE', containerId }, user.id);
                 await database.addTransfer({
                     lotId: id,
                     actorId: user.id,

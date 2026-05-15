@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="ChainCacao">
+  <rect width="192" height="192" rx="44" fill="#3D1B0B"/>
+  <circle cx="96" cy="92" r="48" fill="#FDF8F3" opacity="0.12"/>
+  <path d="M65 104c0-17 14-30 31-30h6c17 0 31 13 31 30s-14 30-31 30h-6c-17 0-31-13-31-30Z" fill="#FDF8F3"/>
+  <path d="M75 76c9 7 15 18 15 31 0 13-6 24-15 31" fill="none" stroke="#3D1B0B" stroke-width="10" stroke-linecap="round"/>
+  <path d="M117 76c-9 7-15 18-15 31 0 13 6 24 15 31" fill="none" stroke="#3D1B0B" stroke-width="10" stroke-linecap="round"/>
+</svg>

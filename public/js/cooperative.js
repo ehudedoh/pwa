@@ -198,7 +198,7 @@ const cooperative = {
         lot.coopId = user.id;
         await database.updateLot(lot);
 
-        const tx = await blockchain.simulateTransaction({ offWeight, lotId, moisture, grade: this.selectedGrade }, user.id);
+        const tx = await blockchain.submitTransaction({ offWeight, lotId, moisture, grade: this.selectedGrade }, user.id);
         await database.addTransfer({
             lotId: lotId,
             actorId: user.id,

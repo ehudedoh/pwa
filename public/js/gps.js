@@ -61,13 +61,22 @@ const gps = {
         }
 
         container.style.display = 'block';
+        container.style.minHeight = '280px';
         this.currentMap = L.map(elementId).setView([lat, lng], zoom);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap'
         }).addTo(this.currentMap);
 
         const marker = L.marker([lat, lng]).addTo(this.currentMap);
+        L.circle([lat, lng], {
+            radius: 40,
+            color: '#3D1B0B',
+            fillColor: '#3D1B0B',
+            fillOpacity: 0.12,
+            weight: 2
+        }).addTo(this.currentMap);
         
         // Forcer le redimensionnement après injection dans le DOM
         setTimeout(() => {
@@ -85,16 +94,27 @@ const gps = {
         if (!container) return;
 
         container.style.display = 'block';
+        container.style.minHeight = '260px';
         const miniMap = L.map(elementId, {
-            zoomControl: false,
+            zoomControl: true,
             attributionControl: false,
-            dragging: false,
-            scrollWheelZoom: false,
-            touchZoom: false
-        }).setView([lat, lng], 14);
+            dragging: true,
+            scrollWheelZoom: true,
+            touchZoom: true
+        }).setView([lat, lng], 16);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(miniMap);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(miniMap);
         L.marker([lat, lng]).addTo(miniMap);
+        L.circle([lat, lng], {
+            radius: 35,
+            color: '#3D1B0B',
+            fillColor: '#3D1B0B',
+            fillOpacity: 0.12,
+            weight: 2
+        }).addTo(miniMap);
 
         setTimeout(() => miniMap.invalidateSize(), 200);
         return miniMap;

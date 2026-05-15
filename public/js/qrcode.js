@@ -2,13 +2,18 @@ const qrcodeControl = {
     generate(elementId, data) {
         const element = document.getElementById(elementId);
         element.innerHTML = "";
-        new QRCode(element, {
-            text: data,
-            width: 200,
-            height: 200,
-            colorDark: "#3D1B0B",
-            colorLight: "#ffffff"
-        });
+        try {
+            new QRCode(element, {
+                text: String(data),
+                width: 200,
+                height: 200,
+                colorDark: "#3D1B0B",
+                colorLight: "#ffffff"
+            });
+        } catch (error) {
+            element.innerHTML = `<div style="padding:1rem; border:1px dashed var(--primary); border-radius:12px; text-align:center; font-weight:700; color:var(--primary)">${String(data)}</div>`;
+            console.warn("QR generation fallback used:", error);
+        }
     },
 
     async scan(elementId, onResult) {

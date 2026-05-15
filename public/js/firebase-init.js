@@ -15,9 +15,21 @@ const firebaseConfig = {
 import * as firestore from 'firebase/firestore';
 import * as authSDK from 'firebase/auth';
 
-const app = initializeApp(firebaseConfig);
+const runtimeConfig = window.__CHAINCACAO_CONFIG__ || {};
+const resolvedFirebaseConfig = {
+  ...firebaseConfig,
+  apiKey: runtimeConfig.firebaseApiKey || firebaseConfig.apiKey,
+  projectId: runtimeConfig.firebaseProjectId || firebaseConfig.projectId,
+  authDomain: runtimeConfig.firebaseAuthDomain || firebaseConfig.authDomain,
+  firestoreDatabaseId: runtimeConfig.firebaseFirestoreDatabaseId || firebaseConfig.firestoreDatabaseId,
+  storageBucket: runtimeConfig.firebaseStorageBucket || firebaseConfig.storageBucket,
+  messagingSenderId: runtimeConfig.firebaseMessagingSenderId || firebaseConfig.messagingSenderId,
+  appId: runtimeConfig.firebaseAppId || firebaseConfig.appId,
+};
+
+const app = initializeApp(resolvedFirebaseConfig);
 export const auth = authSDK.getAuth(app);
-export const db = firestore.getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = firestore.getFirestore(app, resolvedFirebaseConfig.firestoreDatabaseId);
 
 window.firebaseAuth = auth;
 window.firebaseDB = db;

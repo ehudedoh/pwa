@@ -1,0 +1,16 @@
+{
+  "name": "chaincacao-deploy",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy:rinkeby": "hardhat run --network polygon_mumbai scripts/deploy.js",
+    "deploy:mainnet": "hardhat run --network polygon_mainnet scripts/deploy.js"
+  },
+  "devDependencies": {
+    "hardhat": "^2.17.0",
+    "@nomiclabs/hardhat-ethers": "^2.0.6",
+    "ethers": "^5.7.2",
+    "dotenv": "^16.3.1"
+  }
+}

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chaincacao-v1';
+const CACHE_NAME = 'chaincacao-v2';
 const ASSETS = [
     './',
     './index.html',
@@ -21,6 +21,9 @@ const ASSETS = [
     './js/pdf.js',
     './js/offline.js',
     './js/firebase-init.js',
+    './manifest.json',
+    './images/icons/icon-192x192.svg',
+    './images/icons/icon-512x512.svg',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
     'https://cdn.jsdelivr.net/npm/idb@8/build/umd.js',

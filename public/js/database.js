@@ -55,11 +55,26 @@ const database = {
         const { doc, setDoc } = window.FirebaseSDK.firestore;
         const path = `lots/${lot.id}`;
         try {
+            const cleanValue = (value) => {
+                if (value === undefined) return undefined;
+                if (value === null || value instanceof Date) return value;
+                if (Array.isArray(value)) return value.map(cleanValue).filter((item) => item !== undefined);
+                if (typeof value === 'object') {
+                    return Object.fromEntries(
+                        Object.entries(value)
+                            .map(([key, entry]) => [key, cleanValue(entry)])
+                            .filter(([, entry]) => entry !== undefined)
+                    );
+                }
+                return value;
+            };
+            const cleanedLot = cleanValue(lot);
+
             // Ensure timestamp is a Date for Firestore
-            if (lot.timestamp && !(lot.timestamp instanceof Date)) {
-                lot.timestamp = new Date(lot.timestamp);
+            if (cleanedLot.timestamp && !(cleanedLot.timestamp instanceof Date)) {
+                cleanedLot.timestamp = new Date(cleanedLot.timestamp);
             }
-            await setDoc(doc(window.firebaseDB, path), lot);
+            await setDoc(doc(window.firebaseDB, path), cleanedLot);
         } catch (e) {
             this.handleError(e, 'write', path);
         }

@@ -1,24 +1,125 @@
+const CONTRACT_ABI = (typeof window !== 'undefined' && window.CHAINCACAO_ABI) ? window.CHAINCACAO_ABI : [
+    'function anchorData(string batchId, string dataHash, string actorId) public'
+];
+
 const blockchain = {
+    get runtimeConfig() {
+        return window.__CHAINCACAO_CONFIG__ || {};
+    },
+
+    get contractAddress() {
+        return this.runtimeConfig.contractAddress || window.APP_CONFIG?.contractAddress || '0xF7d808899F7D529c5f2A2F4637726Bb25B4a26a7';
+    },
+
+    get chainId() {
+        return Number(this.runtimeConfig.chainId || window.APP_CONFIG?.chainId || 137);
+    },
+
     async simulateHash(data) {
         const str = JSON.stringify(data);
-        // Simulation rapide SHA-256
         const encoder = new TextEncoder();
         const msgUint8 = encoder.encode(str);
         const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return '0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     },
 
-    async simulateTransaction(data, actorId) {
-        const hash = await this.simulateHash(data);
-        const blockNumber = Math.floor(135000000 + Math.random() * 1000000);
+    resolveBatchId(data, actorId) {
+        if (data && typeof data === 'object') {
+            return data.batchId || data.containerId || data.lotId || data.id || actorId || 'CHAINCACAO';
+        }
+        return actorId || 'CHAINCACAO';
+    },
+
+    async sendWithMetaMask(data, actorId) {
+        if (!window.ethereum || !window.ethers) {
+            throw new Error('MetaMask ou ethers non disponible');
+        }
+
+        const provider = new window.ethers.BrowserProvider(window.ethereum);
+        await provider.send('eth_requestAccounts', []);
+
+        const network = await provider.getNetwork();
+        if (Number(network.chainId) !== this.chainId) {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: `0x${this.chainId.toString(16)}` }]
+                });
+            } catch (switchError) {
+                throw new Error('Veuillez passer sur Polygon Mainnet dans MetaMask');
+            }
+        }
+
+        const signer = await provider.getSigner();
+        const contract = new window.ethers.Contract(this.contractAddress, CONTRACT_ABI, signer);
+        const batchId = this.resolveBatchId(data, actorId);
+        const dataHash = await this.simulateHash(data);
+
+        const tx = await contract.anchorData(batchId, dataHash, actorId);
+        const receipt = await tx.wait();
+
         return {
-            hash: '0x' + hash,
-            actorId: actorId,
-            network: 'Polygon Mainnet',
-            blockNumber: blockNumber,
+            hash: tx.hash,
+            actorId,
+            batchId,
+            dataHash,
+            network: window.APP_CONFIG?.networkName || 'Polygon Mainnet',
+            blockNumber: receipt?.blockNumber || null,
             timestamp: new Date(),
-            explorerUrl: `https://polygonscan.com/tx/0x${hash}`
+            explorerUrl: `https://polygonscan.com/tx/${tx.hash}`
         };
+    },
+
+    async submitTransaction(data, actorId) {
+        try {
+            return await this.sendWithMetaMask(data, actorId);
+        } catch (error) {
+            const relayerUrl = this.runtimeConfig.relayerUrl || window.APP_CONFIG?.relayerUrl || '/api/blockchain/notarize';
+            if (relayerUrl) {
+                try {
+                    return await this.sendViaRelayer(data, actorId);
+                } catch (rErr) {
+                    throw new Error(`Transaction blockchain impossible (MetaMask et relayer ont échoué): ${error.message}; relayer: ${rErr.message}`);
+                }
+            }
+            throw new Error(`Transaction blockchain impossible: ${error.message || error}`);
+        }
+    },
+
+    async sendViaRelayer(data, actorId) {
+        const relayerUrl = this.runtimeConfig.relayerUrl || window.APP_CONFIG?.relayerUrl || '/api/blockchain/notarize';
+        if (!relayerUrl) throw new Error('Relayer non configuré');
+
+        const url = relayerUrl.includes('/api/blockchain/notarize')
+            ? relayerUrl
+            : relayerUrl.replace(/\/$/, '') + '/api/blockchain/notarize';
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data, actorId })
+        });
+
+        if (!res.ok) {
+            let errBody = null;
+            try { errBody = await res.json(); } catch (e) { /* ignore */ }
+            throw new Error(errBody?.error || `Relayer error ${res.status}`);
+        }
+
+        const json = await res.json();
+        return {
+            hash: json.hash,
+            actorId,
+            batchId: this.resolveBatchId(data, actorId),
+            dataHash: json.dataHash || await this.simulateHash(data),
+            network: window.APP_CONFIG?.networkName || 'Polygon Mainnet',
+            blockNumber: json.blockNumber || null,
+            timestamp: new Date(),
+            explorerUrl: json.explorerUrl || (`https://polygonscan.com/tx/${json.hash}`)
+        };
+    },
+
+    async notarize(data, actorId) {
+        return this.submitTransaction(data, actorId);
     }
 };

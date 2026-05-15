@@ -118,7 +118,7 @@ const agriculteur = {
                     <i data-lucide="camera"></i> PHOTO DU SAC
                 </button>
                 
-                <div id="mini-map" class="mini-map-container" style="display:none"></div>
+                <div id="mini-map" class="mini-map-container" style="display:block; min-height:280px; border-radius:20px; overflow:hidden; margin: 0.75rem 0 1rem"></div>
                 <div id="f-gps-display" style="margin-top:0.5rem"></div>
 
                 <button class="btn btn-primary" id="btn-gps-capture" onclick="agriculteur.getGps()">
@@ -210,12 +210,12 @@ const agriculteur = {
             species: this.formState.data.species,
             region: this.formState.data.region,
             gps: this.formState.data.gps,
-            photo: this.formState.data.photo,
+            photo: this.formState.data.photo || null,
             status: 'CREATED'
         };
         await database.addLot(lot);
         
-        const tx = await blockchain.simulateTransaction(lot, user.id);
+        const tx = await blockchain.submitTransaction(lot, user.id);
         await database.addTransfer({
             lotId: id,
             actorId: user.id,

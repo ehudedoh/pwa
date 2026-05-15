@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ChainCacao - Traçabilité Transparente</title>
     <meta name="theme-color" content="#3D1B0B">
-    <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="./images/icons/icon-192x192.png">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/images/icons/icon-192x192.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/images/icons/icon-192x192.svg">
 
     <!-- Splash Screen Styles -->
     <style>
@@ -87,8 +88,16 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.16.0/dist/ethers.umd.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/motion/dist/motion.js" defer></script>
+    <script src="./js/runtime-config.js"></script>
+    <script>
+        window.APP_CONFIG = {
+            contractAddress: window.__CHAINCACAO_CONFIG__?.contractAddress || '0xF7d808899F7D529c5f2A2F4637726Bb25B4a26a7',
+            chainId: Number(window.__CHAINCACAO_CONFIG__?.chainId || 137),
+            networkName: window.__CHAINCACAO_CONFIG__?.networkName || 'Polygon Mainnet'
+        };
+    </script>
 
     <!-- Styles -->
     <link rel="stylesheet" href="./css/style.css">
@@ -197,6 +206,7 @@
     <script src="./js/utils.js" defer></script>
     <script src="./js/database.js" defer></script>
     <script src="./js/auth.js" defer></script>
+    <script src="./js/abi.js" defer></script>
     <script src="./js/blockchain.js" defer></script>
     <script src="./js/gps.js" defer></script>
     <script src="./js/camera.js" defer></script>
@@ -207,7 +217,6 @@
     <script src="./js/exportateur.js" defer></script>
     <script src="./js/verificateur.js" defer></script>
     <script src="./js/offline.js" defer></script>
-    <script src="./js/demo.js" defer></script>
     <script src="./js/app.js" defer></script>
 </body>
 </html>
