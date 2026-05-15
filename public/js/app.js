@@ -4,7 +4,9 @@ const app = {
             console.log("ChainCacao starting...");
             await database.init();
             offline.init();
-            auth.init();
+            if (window.auth && typeof window.auth.init === 'function') {
+                window.auth.init();
+            }
             if (window.urgence?.init) window.urgence.init();
             
             this.setupNavigation();
