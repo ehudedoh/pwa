@@ -215,3 +215,6 @@ const auth = {
         location.reload();
     }
 };
+
+// Expose for inline onclick handlers and other modules
+try { window.auth = auth; } catch (e) { /* ignore in non-browser env */ }
