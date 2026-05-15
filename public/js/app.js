@@ -10,6 +10,9 @@ const app = {
             this.setupNavigation();
             this.setupPWAInstall();
             this.refreshIcons();
+            // auth button in header
+            const authBtn = document.getElementById('btn-auth');
+            if (authBtn) authBtn.onclick = (e) => { e.stopPropagation(); auth.showAuthScreen(); };
         } catch (error) {
             console.error("App init error:", error);
         }

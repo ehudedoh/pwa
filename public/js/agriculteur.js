@@ -41,10 +41,13 @@ const agriculteur = {
                     <span class="v">${lots.length > 0 ? lots[lots.length - 1].weight : 0}kg</span>
                 </div>
             </div>
-            <button class="btn btn-primary" id="btn-new-lot">
+            <div style="display:flex; gap:12px; align-items:center; margin:1rem 0">
+                <button class="btn btn-primary" id="btn-new-lot">
                 <i data-lucide="plus-circle" style="width:18px; height:18px"></i>
                 NOUVEAU LOT
             </button>
+                <button class="btn btn-outline" id="btn-urgency-agri" style="background:#b02a1a; color:#fff; border:none; border-radius:999px; padding:8px 12px; font-weight:800">URGENCE</button>
+            </div>
             <h3 class="section-title">Historique des récoltes</h3>
             <div id="agri-lot-list">
                 ${(lots.slice().reverse()).map(lot => `
@@ -69,6 +72,8 @@ const agriculteur = {
 
         app.refreshIcons();
         document.getElementById('btn-new-lot').onclick = () => this.showForm();
+        const ubtn = document.getElementById('btn-urgency-agri');
+        if (ubtn) ubtn.onclick = async () => { if (window.urgence && window.urgence.openModal) await window.urgence.openModal(); };
     },
 
     showForm() {

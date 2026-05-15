@@ -123,12 +123,12 @@
                     <div class="logo-tagline">Traçabilité Blockchain Temps Réel</div>
                 </div>
             </div>
-            <div id="user-info" class="user-badge" onclick="auth.logout()">
+            <div id="user-info" class="user-badge">
                 <div id="user-display-container">
                     <span id="user-id-display">Invité</span>
                 </div>
-                <button id="urgency-btn" type="button" style="margin-left:10px; background:#b02a1a; color:#fff; border:none; border-radius:999px; padding:8px 12px; font-size:11px; font-weight:800; letter-spacing:0.04em; cursor:pointer; box-shadow:0 8px 18px rgba(176,42,26,0.22);">URGENCE</button>
-                <i data-lucide="log-out" style="width:16px; margin-left:8px"></i>
+                <button id="btn-auth" type="button" style="margin-left:10px; background:transparent; color:#3D1B0B; border:1px solid rgba(61,27,11,0.06); border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer;">SE CONNECTER</button>
+                <i data-lucide="log-out" style="width:16px; margin-left:8px; cursor:pointer" onclick="auth.logout()"></i>
                 <button id="install-btn" style="display:none">PWA</button>
             </div>
         </header>
