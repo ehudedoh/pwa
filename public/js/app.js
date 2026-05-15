@@ -45,6 +45,25 @@ const app = {
                     wauth = window.auth;
                 }
 
+                // If auth still missing, try to dynamically load the auth script
+                if (!wauth && !document.getElementById('auth-screen')) {
+                    try {
+                        await new Promise((resolve, reject) => {
+                            const s = document.createElement('script');
+                            s.src = '/js/auth.js';
+                            s.defer = true;
+                            s.onload = () => resolve(true);
+                            s.onerror = (e) => reject(e);
+                            document.body.appendChild(s);
+                            // timeout
+                            setTimeout(() => resolve(false), 2500);
+                        });
+                        wauth = window.auth;
+                    } catch (e) {
+                        console.warn('Dynamic load of auth failed', e);
+                    }
+                }
+
                 if ((typeof wauth === 'undefined' || !wauth || !wauth.currentUser) && !document.getElementById('auth-screen')) {
                     if (wauth && typeof wauth.showAuthScreen === 'function') {
                         wauth.showAuthScreen('login');
