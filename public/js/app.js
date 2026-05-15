@@ -43,6 +43,17 @@ const app = {
                         await new Promise(r => setTimeout(r, 100));
                     }
                     wauth = window.auth;
+                    // If fallback auth screen was created, remove it so real auth can render
+                    try {
+                        const screen = document.getElementById('auth-screen');
+                        if (wauth && typeof wauth.showAuthScreen === 'function' && screen) {
+                            const text = (screen.innerText || '').toLowerCase();
+                            if (text.includes('connexion (fallback)') || !text.includes('chaincacao')) {
+                                screen.remove();
+                                if (document.getElementById('app')) document.getElementById('app').classList.remove('blurred');
+                            }
+                        }
+                    } catch (e) { /* ignore */ }
                 }
 
                 // If auth still missing, try to dynamically load the auth script
