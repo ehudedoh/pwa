@@ -16,6 +16,16 @@ const app = {
             // header logout icon: open registration form instead of immediate logout
             const headerLogout = document.getElementById('header-logout');
             if (headerLogout) headerLogout.onclick = (e) => { e.stopPropagation(); auth.showAuthScreen('register'); };
+            // Ensure auth screen appears if no user is logged in (fallback for race conditions)
+            setTimeout(() => {
+                try {
+                    if ((!auth || !auth.currentUser) && !document.getElementById('auth-screen')) {
+                        auth.showAuthScreen('login');
+                    }
+                } catch (e) {
+                    console.error('Fallback auth display error', e);
+                }
+            }, 250);
         } catch (error) {
             console.error("App init error:", error);
         }
