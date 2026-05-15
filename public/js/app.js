@@ -4,6 +4,10 @@ const app = {
             console.log("ChainCacao starting...");
             await database.init();
             offline.init();
+            if (window.firebaseReadyPromise) {
+                try { await window.firebaseReadyPromise; } catch (e) { /* ignore */ }
+            }
+
             if (window.auth && typeof window.auth.init === 'function') {
                 window.auth.init();
             }
@@ -44,22 +48,19 @@ const app = {
                 if (window.auth && typeof window.auth.showAuthScreen === 'function') window.auth.showAuthScreen('register');
                 else this.showFallbackAuth();
             };
-            // Ensure auth screen appears if no user is logged in (fallback for race conditions)
-            const self = this;
-            setTimeout(() => {
-                try {
-                    const wauth = window.auth;
-                    if ((typeof wauth === 'undefined' || !wauth || !wauth.currentUser) && !document.getElementById('auth-screen')) {
-                        if (wauth && typeof wauth.showAuthScreen === 'function') {
-                            wauth.showAuthScreen('login');
-                        } else {
-                            self.showFallbackAuth();
-                        }
+            // Ensure auth screen appears if no user is logged in (deterministic after firebase ready)
+            try {
+                const wauth = window.auth;
+                if ((typeof wauth === 'undefined' || !wauth || !wauth.currentUser) && !document.getElementById('auth-screen')) {
+                    if (wauth && typeof wauth.showAuthScreen === 'function') {
+                        wauth.showAuthScreen('login');
+                    } else {
+                        this.showFallbackAuth();
                     }
-                } catch (e) {
-                    console.error('Fallback auth display error', e);
                 }
-            }, 250);
+            } catch (e) {
+                console.error('Fallback auth display error', e);
+            }
         } catch (error) {
             console.error("App init error:", error);
         }
