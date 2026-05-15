@@ -25,6 +25,7 @@ async function waitForDatabase(timeoutMs = 2000) {
 
 const auth = {
   currentUser: null,
+  cooperativeCache: [],
 
   async init() {
     const db = await waitForDatabase(3000);
@@ -59,6 +60,8 @@ const auth = {
           <button id="tab-login" class="active" onclick="auth.switchTab('login')">Connexion</button>
           <button id="tab-register" onclick="auth.switchTab('register')">Inscription</button>
         </div>
+
+        <div id="auth-hint" class="auth-hint" style="margin-bottom:12px; font-weight:700; color:var(--secondary)"></div>
 
         <div id="login-form" class="auth-form">
           <div class="input-group">
@@ -98,6 +101,12 @@ const auth = {
               ${utils.REGIONS.map(r => `<option value="${r}">${r}</option>`).join('')}
             </select>
           </div>
+
+          <div class="input-group hidden" id="cooperative-group">
+            <label>Coopérative de réception</label>
+            <select id="reg-cooperative"></select>
+          </div>
+
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
             <div class="input-group">
               <label>Âge</label>
@@ -126,6 +135,7 @@ const auth = {
 
     // Ensure requested tab is selected
     setTimeout(() => this.switchTab(tab), 50);
+    setTimeout(() => this.updateRoleFields(), 60);
   },
 
   switchTab(tab) {
@@ -142,15 +152,62 @@ const auth = {
   },
 
   toggleVerifierFields() {
-    const role = document.getElementById('reg-role').value;
+    this.updateRoleFields();
+  },
+
+  async updateRoleFields() {
+    const role = document.getElementById('reg-role')?.value;
     const locGroup = document.getElementById('locality-group');
+    const coopGroup = document.getElementById('cooperative-group');
     const phoneLabel = document.getElementById('label-phone');
-    if (role === 'VER') {
-      locGroup.style.display = 'none';
-      phoneLabel.innerText = 'Téléphone Professionnel';
-    } else {
-      locGroup.style.display = 'block';
-      phoneLabel.innerText = 'Mobile (+228)';
+    const hint = document.getElementById('auth-hint');
+    if (!role) return;
+
+    if (role === 'AGR') {
+      if (locGroup) locGroup.style.display = 'block';
+      if (coopGroup) coopGroup.classList.add('hidden');
+      if (phoneLabel) phoneLabel.innerText = 'Mobile (+228)';
+      if (hint) hint.innerText = 'Agriculteur: choisissez votre localité pour être rattaché à la coopérative de votre zone.';
+    } else if (role === 'COOP') {
+      if (locGroup) locGroup.style.display = 'block';
+      if (coopGroup) coopGroup.classList.add('hidden');
+      if (phoneLabel) phoneLabel.innerText = 'Mobile (+228)';
+      if (hint) hint.innerText = 'Coopérative: choisissez votre localité, vos lots seront reçus dans cette zone.';
+    } else if (role === 'EXP') {
+      if (locGroup) locGroup.style.display = 'none';
+      if (coopGroup) coopGroup.classList.remove('hidden');
+      if (phoneLabel) phoneLabel.innerText = 'Mobile (+228)';
+      if (hint) hint.innerText = 'Exportateur: choisissez la coopérative depuis laquelle vous recevez les lots.';
+      await this.loadCooperativeOptions();
+    } else if (role === 'VER') {
+      if (locGroup) locGroup.style.display = 'none';
+      if (coopGroup) coopGroup.classList.add('hidden');
+      if (phoneLabel) phoneLabel.innerText = 'Téléphone Professionnel';
+      if (hint) hint.innerText = 'Vérificateur: pas de localité requise.';
+    }
+  },
+
+  async loadCooperativeOptions() {
+    const select = document.getElementById('reg-cooperative');
+    if (!select) return;
+    select.innerHTML = '<option value="">Chargement...</option>';
+    try {
+      const db = await waitForDatabase(3000);
+      const coops = db?.getCooperatives ? await db.getCooperatives() : [];
+      this.cooperativeCache = Array.isArray(coops) ? coops : [];
+      if (!this.cooperativeCache.length) {
+        select.outerHTML = `
+          <input type="text" id="reg-cooperative" placeholder="COOP-001" />
+        `;
+        return;
+      }
+      select.innerHTML = this.cooperativeCache.map(coop => {
+        const label = `${coop.firstname || coop.name || coop.id}${coop.locality ? ` • ${coop.locality}` : ''}`;
+        return `<option value="${coop.id}" data-locality="${coop.locality || ''}" data-name="${(coop.firstname || coop.name || coop.id).replace(/"/g, '&quot;')}">${label}</option>`;
+      }).join('');
+    } catch (e) {
+      console.warn('Unable to load cooperatives', e);
+      select.outerHTML = `<input type="text" id="reg-cooperative" placeholder="COOP-001" />`;
     }
   },
 
@@ -188,25 +245,37 @@ const auth = {
     const phone = document.getElementById('reg-phone').value.trim();
     const pass = document.getElementById('reg-pass').value;
     const passConfirm = document.getElementById('reg-pass-confirm').value;
+    const cooperativeSelect = document.getElementById('reg-cooperative');
+    const selectedCoop = cooperativeSelect?.selectedOptions?.[0];
     if (!last || !first || !phone) return alert('Veuillez remplir tous les champs obligatoires');
     if (phone.length < 8) return alert('Numéro de téléphone invalide');
     if (pass.length < 6) return alert('Le mot de passe doit faire au moins 6 caractères');
     if (pass !== passConfirm) return alert('Les mots de passe ne correspondent pas');
+
+    if ((role === 'AGR' || role === 'COOP') && !document.getElementById('reg-locality').value) {
+      return alert('Veuillez choisir votre localité');
+    }
+    if (role === 'EXP' && !cooperativeSelect?.value) {
+      return alert('Veuillez choisir la coopérative de réception');
+    }
 
     const userId = `${role}-${phone}`;
     const email = `${userId.toLowerCase()}@chaincacao.tg`;
     const { createUserWithEmailAndPassword } = window.FirebaseSDK.auth;
     try {
       await createUserWithEmailAndPassword(window.firebaseAuth, email, pass);
+      const locality = role === 'VER' ? 'Global' : (document.getElementById('reg-locality').value || null);
       const newUser = {
         id: userId,
         role,
         lastname: last,
         firstname: first,
-        locality: loc,
+        locality: role === 'EXP' ? (selectedCoop?.dataset?.locality || null) : locality,
         age,
         phone,
         password: pass,
+        receivingCooperativeId: role === 'EXP' ? cooperativeSelect.value : null,
+        receivingCooperativeName: role === 'EXP' ? (selectedCoop?.dataset?.name || selectedCoop?.textContent || cooperativeSelect.value || null) : null,
         createdAt: new Date().toISOString()
       };
       const db = window.database || (typeof database !== 'undefined' ? database : null);

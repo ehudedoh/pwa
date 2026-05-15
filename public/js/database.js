@@ -182,6 +182,22 @@ const database = {
         }
     },
 
+    async getCooperativesByLocality(locality) {
+        const { collection, getDocs, query, where } = window.FirebaseSDK.firestore;
+        const path = 'users';
+        try {
+            const q = query(
+                collection(window.firebaseDB, path),
+                where('role', '==', 'COOP'),
+                where('locality', '==', locality)
+            );
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => doc.data());
+        } catch (e) {
+            this.handleError(e, 'list', path);
+        }
+    },
+
     async urgentTransfer({ lotId, targetCoopId, actorId, note }) {
         const { doc, updateDoc } = window.FirebaseSDK.firestore;
         const lotPath = `lots/${lotId}`;

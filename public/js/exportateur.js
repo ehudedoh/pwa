@@ -1,7 +1,9 @@
 const exportateur = {
     async renderDashboard() {
+        const user = window.auth?.currentUser || {};
         const lots = await database.getAllLots();
-        const validatedLots = lots.filter(l => l.status === 'COLLECTED');
+        const targetCoopId = user.receivingCooperativeId || user.coopId || user.id || null;
+        const validatedLots = lots.filter(l => l.status === 'COLLECTED' && (!targetCoopId || l.coopId === targetCoopId));
         const totalWeight = validatedLots.reduce((acc, l) => acc + l.weight, 0);
 
         const container = document.getElementById('exportateur-dashboard');

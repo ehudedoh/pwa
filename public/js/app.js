@@ -253,6 +253,8 @@ const app = {
                               <button id="fb-tab-register">Inscription</button>
                             </div>
 
+                            <div id="fb-auth-hint" class="auth-hint" style="margin-bottom:12px; font-weight:700; color:var(--secondary)"></div>
+
                             <div id="fb-login-form" class="auth-form">
                               <div class="input-group"><label>Identifiant (ex: AGR-90123456)</label><input type="text" id="fb-login-id" placeholder="VOTRE-ID"></div>
                               <div class="input-group"><label>Mot de passe</label><input type="password" id="fb-login-pass" placeholder="••••••"></div>
@@ -265,6 +267,8 @@ const app = {
                               </div>
                               <div class="input-group"><label>Nom</label><input id="fb-reg-last"/></div>
                               <div class="input-group"><label>Prénom</label><input id="fb-reg-first"/></div>
+                              <div class="input-group" id="fb-locality-group"><label>Localité</label><select id="fb-reg-locality">${utils.REGIONS.map(r => `<option value="${r}">${r}</option>`).join('')}</select></div>
+                              <div class="input-group hidden" id="fb-cooperative-group"><label>Coopérative de réception</label><select id="fb-reg-cooperative"></select></div>
                               <div class="input-group"><label>Téléphone</label><input id="fb-reg-phone"/></div>
                               <div class="input-group"><label>Mot de passe</label><input type="password" id="fb-reg-pass"/></div>
                               <div class="input-group"><label>Confirmer</label><input type="password" id="fb-reg-pass-confirm"/></div>
@@ -278,10 +282,64 @@ const app = {
                     document.body.appendChild(authContainer);
                     if (appEl) appEl.classList.add('blurred');
 
+                    const updateRoleFields = async () => {
+                        const role = document.getElementById('fb-reg-role')?.value;
+                        const localityGroup = document.getElementById('fb-locality-group');
+                        const coopGroup = document.getElementById('fb-cooperative-group');
+                        const hint = document.getElementById('fb-auth-hint');
+                        if (role === 'AGR') {
+                            localityGroup.style.display = 'block';
+                            coopGroup.classList.add('hidden');
+                            hint.innerText = 'Agriculteur: choisissez votre localité pour être rattaché à la coopérative de votre zone.';
+                        } else if (role === 'COOP') {
+                            localityGroup.style.display = 'block';
+                            coopGroup.classList.add('hidden');
+                            hint.innerText = 'Coopérative: choisissez votre localité.';
+                        } else if (role === 'EXP') {
+                            localityGroup.style.display = 'none';
+                            coopGroup.classList.remove('hidden');
+                            hint.innerText = 'Exportateur: choisissez la coopérative de réception.';
+                            const selectHost = document.getElementById('fb-cooperative-group');
+                            const renderManualInput = (message) => {
+                                selectHost.innerHTML = `
+                                  <label>Coopérative de réception (ID)</label>
+                                  <input id="fb-reg-cooperative" type="text" placeholder="COOP-001" value="" />
+                                  <small style="display:block; margin-top:6px; color:var(--secondary)">${message}</small>
+                                `;
+                            };
+                            renderManualInput('Chargement des coopératives...');
+                            const select = document.getElementById('fb-reg-cooperative');
+                            try {
+                                const db = window.database || (typeof database !== 'undefined' ? database : null);
+                                const coops = db?.getCooperatives ? await db.getCooperatives() : [];
+                                if (!coops?.length) {
+                                    renderManualInput('Aucune coopérative disponible pour le moment. Saisissez l’ID de la coopérative de réception.');
+                                } else {
+                                    selectHost.innerHTML = `
+                                      <label>Coopérative de réception</label>
+                                      <select id="fb-reg-cooperative">${coops.map(coop => {
+                                        const label = `${coop.firstname || coop.name || coop.id}${coop.locality ? ` • ${coop.locality}` : ''}`;
+                                        return `<option value="${coop.id}" data-locality="${coop.locality || ''}" data-name="${(coop.firstname || coop.name || coop.id).replace(/"/g, '&quot;')}">${label}</option>`;
+                                    }).join('')}</select>
+                                    `;
+                                }
+                            } catch (e) {
+                                console.warn('Unable to load cooperatives for fallback auth', e);
+                                renderManualInput('Impossible de charger les coopératives. Saisissez l’ID de la coopérative de réception.');
+                            }
+                        } else if (role === 'VER') {
+                            localityGroup.style.display = 'none';
+                            coopGroup.classList.add('hidden');
+                            hint.innerText = 'Vérificateur: pas de localité requise.';
+                        }
+                    };
+
                     document.getElementById('fb-cancel-btn').onclick = () => { const el = document.getElementById('auth-screen'); if (el) el.remove(); if (appEl) appEl.classList.remove('blurred'); };
 
                     document.getElementById('fb-tab-login').onclick = () => { document.getElementById('fb-login-form').classList.remove('hidden'); document.getElementById('fb-register-form').classList.add('hidden'); };
-                    document.getElementById('fb-tab-register').onclick = () => { document.getElementById('fb-register-form').classList.remove('hidden'); document.getElementById('fb-login-form').classList.add('hidden'); };
+                    document.getElementById('fb-tab-register').onclick = () => { document.getElementById('fb-register-form').classList.remove('hidden'); document.getElementById('fb-login-form').classList.add('hidden'); updateRoleFields(); };
+                    document.getElementById('fb-reg-role').onchange = updateRoleFields;
+                    updateRoleFields();
 
                     document.getElementById('fb-login-btn').onclick = async () => {
                         const id = (document.getElementById('fb-login-id').value || '').toUpperCase().trim();
@@ -310,7 +368,12 @@ const app = {
                         const phone = document.getElementById('fb-reg-phone').value.trim();
                         const pass = document.getElementById('fb-reg-pass').value;
                         const passConfirm = document.getElementById('fb-reg-pass-confirm').value;
+                        const locality = document.getElementById('fb-reg-locality')?.value || null;
+                        const coopSelect = document.getElementById('fb-reg-cooperative');
+                        const selectedCoop = coopSelect?.selectedOptions?.[0];
                         if (!last || !first || !phone) return alert('Remplissez les champs');
+                        if ((role === 'AGR' || role === 'COOP') && !locality) return alert('Choisissez votre localité');
+                        if (role === 'EXP' && !coopSelect?.value) return alert('Choisissez la coopérative de réception');
                         if (pass.length < 6) return alert('Mot de passe trop court');
                         if (pass !== passConfirm) return alert('Les mots de passe ne correspondent pas');
                         const userId = `${role}-${phone}`;
@@ -318,7 +381,18 @@ const app = {
                         try {
                             const { createUserWithEmailAndPassword } = window.FirebaseSDK.auth;
                             await createUserWithEmailAndPassword(window.firebaseAuth, email, pass);
-                            const newUser = { id: userId, role, lastname: last, firstname: first, phone, password: pass, createdAt: new Date().toISOString() };
+                            const newUser = {
+                                id: userId,
+                                role,
+                                lastname: last,
+                                firstname: first,
+                                locality: role === 'VER' ? 'Global' : (role === 'EXP' ? (selectedCoop?.dataset?.locality || null) : locality),
+                                phone,
+                                password: pass,
+                                receivingCooperativeId: role === 'EXP' ? coopSelect.value : null,
+                                   receivingCooperativeName: role === 'EXP' ? (selectedCoop?.dataset?.name || selectedCoop?.textContent || cooperativeSelect.value || null) : null,
+                                createdAt: new Date().toISOString()
+                            };
                             const db = window.database || (typeof database !== 'undefined' ? database : null);
                             if (!db) throw new Error('database not available');
                             await db.saveUser(newUser);

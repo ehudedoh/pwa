@@ -214,6 +214,15 @@ const agriculteur = {
         const user = window.auth?.currentUser || { id: 'UNK', firstname: 'Inconnu' };
         const id = utils.generateId(this.formState.data.region);
         const now = new Date();
+        let assignedCoopId = user.receivingCooperativeId || user.assignedCooperativeId || null;
+        if (!assignedCoopId && user.locality && database.getCooperativesByLocality) {
+            try {
+                const coops = await database.getCooperativesByLocality(user.locality);
+                assignedCoopId = coops?.[0]?.id || null;
+            } catch (e) {
+                console.warn('Unable to resolve cooperative by locality', e);
+            }
+        }
         const lot = {
             id: id,
             farmerId: user.id,
@@ -224,6 +233,8 @@ const agriculteur = {
             region: this.formState.data.region,
             gps: this.formState.data.gps,
             photo: this.formState.data.photo || null,
+            coopId: assignedCoopId,
+            farmerLocality: user.locality || null,
             status: 'CREATED'
         };
         await database.addLot(lot);

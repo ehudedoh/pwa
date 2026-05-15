@@ -1,8 +1,9 @@
 const cooperative = {
     async renderDashboard() {
+        const user = window.auth?.currentUser || { id: 'COOP-001', locality: null };
         const container = document.getElementById('cooperative-scanner');
         const allLots = await database.getAllLots();
-        const pendingLots = allLots.filter(l => l.status === 'CREATED').reverse();
+        const pendingLots = allLots.filter(l => l.status === 'CREATED' && (!l.coopId || l.coopId === user.id)).reverse();
 
         container.innerHTML = `
             <div class="search-box">
