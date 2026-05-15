@@ -236,63 +236,101 @@ const app = {
     },
 
         async showFallbackAuth() {
-                if (document.getElementById('auth-screen')) return;
-                const appEl = document.getElementById('app');
-                const authContainer = document.createElement('div');
-                authContainer.id = 'auth-screen';
-                authContainer.innerHTML = `
-                    <div class="auth-card">
-                        <div class="auth-header"><h2>Connexion (fallback)</h2></div>
-                        <div class="auth-form">
-                            <div class="input-group"><label>Identifiant</label><input id="fb-login-id" placeholder="AGR-9001"/></div>
-                            <div class="input-group"><label>Mot de passe</label><input id="fb-login-pass" type="password"/></div>
+                    if (document.getElementById('auth-screen')) return;
+                    const appEl = document.getElementById('app');
+                    const authContainer = document.createElement('div');
+                    authContainer.id = 'auth-screen';
+                    authContainer.innerHTML = `
+                        <div class="auth-card">
+                            <div class="auth-header">
+                              <div class="logo-box">C</div>
+                              <h1>ChainCacao</h1>
+                              <p>Système de Traçabilité Togolais</p>
+                            </div>
+
+                            <div class="auth-tabs">
+                              <button id="fb-tab-login" class="active">Connexion</button>
+                              <button id="fb-tab-register">Inscription</button>
+                            </div>
+
+                            <div id="fb-login-form" class="auth-form">
+                              <div class="input-group"><label>Identifiant (ex: AGR-90123456)</label><input type="text" id="fb-login-id" placeholder="VOTRE-ID"></div>
+                              <div class="input-group"><label>Mot de passe</label><input type="password" id="fb-login-pass" placeholder="••••••"></div>
+                              <button class="btn btn-primary" id="fb-login-btn">SE CONNECTER</button>
+                            </div>
+
+                            <div id="fb-register-form" class="auth-form hidden">
+                              <div class="input-group"><label>Rôle</label>
+                                <select id="fb-reg-role"><option value="AGR">Agriculteur</option><option value="COOP">Coopérative</option><option value="EXP">Exportateur</option><option value="VER">Vérificateur</option></select>
+                              </div>
+                              <div class="input-group"><label>Nom</label><input id="fb-reg-last"/></div>
+                              <div class="input-group"><label>Prénom</label><input id="fb-reg-first"/></div>
+                              <div class="input-group"><label>Téléphone</label><input id="fb-reg-phone"/></div>
+                              <div class="input-group"><label>Mot de passe</label><input type="password" id="fb-reg-pass"/></div>
+                              <div class="input-group"><label>Confirmer</label><input type="password" id="fb-reg-pass-confirm"/></div>
+                              <button class="btn btn-primary" id="fb-reg-btn">S'INSCRIRE</button>
+                            </div>
+
                             <div style="display:flex; gap:8px; margin-top:10px">
-                                <button id="fb-login-btn" class="btn btn-primary">SE CONNECTER</button>
                                 <button id="fb-cancel-btn" class="btn">ANNULER</button>
                             </div>
-                        </div>
-                    </div>`;
-                document.body.appendChild(authContainer);
-                if (appEl) appEl.classList.add('blurred');
+                        </div>`;
+                    document.body.appendChild(authContainer);
+                    if (appEl) appEl.classList.add('blurred');
 
-                document.getElementById('fb-cancel-btn').onclick = () => {
-                        const el = document.getElementById('auth-screen'); if (el) el.remove(); if (appEl) appEl.classList.remove('blurred');
-                };
+                    document.getElementById('fb-cancel-btn').onclick = () => { const el = document.getElementById('auth-screen'); if (el) el.remove(); if (appEl) appEl.classList.remove('blurred'); };
 
-                document.getElementById('fb-login-btn').onclick = async () => {
+                    document.getElementById('fb-tab-login').onclick = () => { document.getElementById('fb-login-form').classList.remove('hidden'); document.getElementById('fb-register-form').classList.add('hidden'); };
+                    document.getElementById('fb-tab-register').onclick = () => { document.getElementById('fb-register-form').classList.remove('hidden'); document.getElementById('fb-login-form').classList.add('hidden'); };
+
+                    document.getElementById('fb-login-btn').onclick = async () => {
                         const id = (document.getElementById('fb-login-id').value || '').toUpperCase().trim();
                         const pass = document.getElementById('fb-login-pass').value || '';
                         if (!id || !pass) return alert('Remplissez les champs');
-                        const db = window.database || (typeof database !== 'undefined' ? database : null);
-                        let user = null;
-                        if (db) {
-                            try {
-                                user = await db.getUser(id);
-                            } catch (e) {
-                                console.warn('DB getUser failed, falling back to localStorage', e);
-                                user = null;
-                            }
+                        const email = `${id.toLowerCase()}@chaincacao.tg`;
+                        try {
+                            const { signInWithEmailAndPassword } = window.FirebaseSDK.auth;
+                            await signInWithEmailAndPassword(window.firebaseAuth, email, pass);
+                            const db = window.database || (typeof database !== 'undefined' ? database : null);
+                            const user = db ? await db.getUser(id) : null;
+                            if (!user) return alert('Profil introuvable');
+                            localStorage.setItem('chaincacao_user', JSON.stringify(user));
+                            document.getElementById('auth-screen')?.remove(); if (appEl) appEl.classList.remove('blurred');
+                            app.initUserSession(user);
+                        } catch (e) {
+                            console.error('Login error', e);
+                            alert('Identifiant ou mot de passe incorrect');
                         }
+                    };
 
-                        // If DB returned nothing, try localStorage fallback
-                        if (!user) {
-                            try {
-                                const raw = localStorage.getItem('chaincacao_user');
-                                if (raw) {
-                                    const parsed = JSON.parse(raw);
-                                    if (parsed.id === id) user = parsed;
-                                }
-                            } catch (e) { /* ignore */ }
+                    document.getElementById('fb-reg-btn').onclick = async () => {
+                        const role = document.getElementById('fb-reg-role').value;
+                        const last = document.getElementById('fb-reg-last').value.trim();
+                        const first = document.getElementById('fb-reg-first').value.trim();
+                        const phone = document.getElementById('fb-reg-phone').value.trim();
+                        const pass = document.getElementById('fb-reg-pass').value;
+                        const passConfirm = document.getElementById('fb-reg-pass-confirm').value;
+                        if (!last || !first || !phone) return alert('Remplissez les champs');
+                        if (pass.length < 6) return alert('Mot de passe trop court');
+                        if (pass !== passConfirm) return alert('Les mots de passe ne correspondent pas');
+                        const userId = `${role}-${phone}`;
+                        const email = `${userId.toLowerCase()}@chaincacao.tg`;
+                        try {
+                            const { createUserWithEmailAndPassword } = window.FirebaseSDK.auth;
+                            await createUserWithEmailAndPassword(window.firebaseAuth, email, pass);
+                            const newUser = { id: userId, role, lastname: last, firstname: first, phone, password: pass, createdAt: new Date().toISOString() };
+                            const db = window.database || (typeof database !== 'undefined' ? database : null);
+                            if (!db) throw new Error('database not available');
+                            await db.saveUser(newUser);
+                            alert(`Inscription réussie ! Votre identifiant est : ${userId}`);
+                            localStorage.setItem('chaincacao_user', JSON.stringify(newUser));
+                            document.getElementById('auth-screen')?.remove(); if (appEl) appEl.classList.remove('blurred');
+                            app.initUserSession(newUser);
+                        } catch (e) {
+                            console.error('Register error', e);
+                            alert('Erreur lors de l\'inscription');
                         }
-
-                        if (!user) return alert('Utilisateur introuvable');
-                        // In local fallback mode we don't have stored passwords, accept any password
-                        if (user.password && user.password !== pass) return alert('Mot de passe incorrect');
-
-                        localStorage.setItem('chaincacao_user', JSON.stringify(user));
-                        const el = document.getElementById('auth-screen'); if (el) el.remove(); if (appEl) appEl.classList.remove('blurred');
-                        this.initUserSession(user);
-                };
+                    };
         },
 
     setLoaded() {
