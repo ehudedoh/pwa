@@ -1,6 +1,17 @@
 ChainCacao PWA
 
-Déploiement Render
+## Utilisation réelle
+
+L'application démarre sur l'écran de connexion. L'utilisateur peut ensuite s'inscrire ou se connecter selon son rôle:
+
+- **Agriculteur**: choisit sa localité pendant l'inscription. Ses lots sont rattachés à la coopérative de sa zone.
+- **Coopérative**: choisit sa localité et reçoit les lots des agriculteurs de cette localité.
+- **Exportateur**: choisit la coopérative de réception lors de l'inscription.
+- **Vérificateur**: accède aux fonctions d'audit et de vérification.
+
+Une fois connecté, l'utilisateur peut installer la PWA et utiliser les écrans métier reliés au backend, à Firestore et à la blockchain Polygon.
+
+## Déploiement Render
 
 1. Crée un service Web Node sur Render à partir de ce dépôt.
 2. Utilise ces commandes:
@@ -37,8 +48,14 @@ FIREBASE_APP_ID=...
 /api/health
 ```
 
-Points importants
+## Points importants
 
 - Le build génère `public/js/runtime-config.js` à partir des variables d'environnement.
 - Le serveur `server.js` sert le PWA statique et expose aussi le relayer blockchain.
 - Le contrat Polygon doit déjà être déployé avant de passer en production.
+
+## Notes d'exploitation
+
+- L'installation PWA se fait depuis le bouton affiché dans l'en-tête quand le navigateur le permet.
+- La navigation métier est filtrée par rôle après authentification.
+- La traçabilité lot -> coopérative -> exportateur repose sur Firestore et les écritures blockchain réelles.
