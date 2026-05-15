@@ -211,7 +211,7 @@ const exportateur = {
             app.refreshIcons();
  
             for (const id of ids) {
-                const user = auth.currentUser || { id: 'EXP-001' };
+                const user = window.auth?.currentUser || { id: 'EXP-001' };
                 const lot = await database.getLot(id);
                 lot.status = 'EXPORTED';
                 lot.containerId = containerId;

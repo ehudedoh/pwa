@@ -171,7 +171,7 @@ const cooperative = {
     },
 
     async validateLot(lotId) {
-        const user = auth.currentUser || { id: 'COOP-001' };
+        const user = window.auth?.currentUser || { id: 'COOP-001' };
         const offWeightInput = document.getElementById('official-weight');
         const offWeight = parseFloat(offWeightInput.value);
         const moisture = parseFloat(document.getElementById('moisture-test').value);
@@ -226,7 +226,7 @@ const cooperative = {
     },
 
     async renderHistory() {
-        const user = auth.currentUser || { id: 'COOP-001' };
+        const user = window.auth?.currentUser || { id: 'COOP-001' };
         const allLots = await database.getAllLots();
         const validatedLots = allLots.filter(l => (l.status === 'COLLECTED' || l.status === 'EXPORTED') && l.coopId === user.id).reverse();
         

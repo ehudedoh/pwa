@@ -10,7 +10,7 @@ const urgence = {
     },
 
     async openModal() {
-        const user = auth.currentUser || {};
+        const user = window.auth?.currentUser || {};
         const lots = user.role === 'AGR' && user.id
             ? await database.getLotsByFarmer(user.id)
             : await database.getAllLots();

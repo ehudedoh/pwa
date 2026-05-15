@@ -1,6 +1,6 @@
 const agriculteur = {
     async renderDashboard() {
-        const user = auth.currentUser || { firstname: 'Agriculteur' };
+        const user = window.auth?.currentUser || { firstname: 'Agriculteur' };
         const lots = user.id ? await database.getLotsByFarmer(user.id) : [];
         const totalWeight = lots.reduce((acc, lot) => acc + lot.weight, 0);
         
@@ -211,7 +211,7 @@ const agriculteur = {
     },
 
     async saveLot() {
-        const user = auth.currentUser || { id: 'UNK', firstname: 'Inconnu' };
+        const user = window.auth?.currentUser || { id: 'UNK', firstname: 'Inconnu' };
         const id = utils.generateId(this.formState.data.region);
         const now = new Date();
         const lot = {
@@ -250,7 +250,7 @@ const agriculteur = {
     },
 
     async showDetails(id) {
-        const user = auth.currentUser || {};
+        const user = window.auth?.currentUser || {};
         const lot = await database.getLot(id);
         if (!lot) return alert('Lot introuvable');
         if (user.role === 'AGR' && lot.farmerId !== user.id) {
