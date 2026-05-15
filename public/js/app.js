@@ -17,10 +17,16 @@ const app = {
             const headerLogout = document.getElementById('header-logout');
             if (headerLogout) headerLogout.onclick = (e) => { e.stopPropagation(); auth.showAuthScreen('register'); };
             // Ensure auth screen appears if no user is logged in (fallback for race conditions)
+            const self = this;
             setTimeout(() => {
                 try {
-                    if ((!auth || !auth.currentUser) && !document.getElementById('auth-screen')) {
-                        auth.showAuthScreen('login');
+                    const wauth = window.auth;
+                    if ((typeof wauth === 'undefined' || !wauth || !wauth.currentUser) && !document.getElementById('auth-screen')) {
+                        if (wauth && typeof wauth.showAuthScreen === 'function') {
+                            wauth.showAuthScreen('login');
+                        } else {
+                            self.showFallbackAuth();
+                        }
                     }
                 } catch (e) {
                     console.error('Fallback auth display error', e);
