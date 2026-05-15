@@ -176,6 +176,50 @@ const app = {
         };
     },
 
+        async showFallbackAuth() {
+                if (document.getElementById('auth-screen')) return;
+                const appEl = document.getElementById('app');
+                const authContainer = document.createElement('div');
+                authContainer.id = 'auth-screen';
+                authContainer.innerHTML = `
+                    <div class="auth-card">
+                        <div class="auth-header"><h2>Connexion (fallback)</h2></div>
+                        <div class="auth-form">
+                            <div class="input-group"><label>Identifiant</label><input id="fb-login-id" placeholder="AGR-9001"/></div>
+                            <div class="input-group"><label>Mot de passe</label><input id="fb-login-pass" type="password"/></div>
+                            <div style="display:flex; gap:8px; margin-top:10px">
+                                <button id="fb-login-btn" class="btn btn-primary">SE CONNECTER</button>
+                                <button id="fb-cancel-btn" class="btn">ANNULER</button>
+                            </div>
+                        </div>
+                    </div>`;
+                document.body.appendChild(authContainer);
+                if (appEl) appEl.classList.add('blurred');
+
+                document.getElementById('fb-cancel-btn').onclick = () => {
+                        const el = document.getElementById('auth-screen'); if (el) el.remove(); if (appEl) appEl.classList.remove('blurred');
+                };
+
+                document.getElementById('fb-login-btn').onclick = async () => {
+                        const id = (document.getElementById('fb-login-id').value || '').toUpperCase().trim();
+                        const pass = document.getElementById('fb-login-pass').value || '';
+                        if (!id || !pass) return alert('Remplissez les champs');
+                        const db = window.database || (typeof database !== 'undefined' ? database : null);
+                        if (!db) return alert('Base de données non disponible');
+                        try {
+                                const user = await db.getUser(id);
+                                if (!user) return alert('Utilisateur introuvable');
+                                if (user.password !== pass) return alert('Mot de passe incorrect');
+                                localStorage.setItem('chaincacao_user', JSON.stringify(user));
+                                const el = document.getElementById('auth-screen'); if (el) el.remove(); if (appEl) appEl.classList.remove('blurred');
+                                this.initUserSession(user);
+                        } catch (e) {
+                                console.error('Fallback login error', e);
+                                alert('Erreur lors de la connexion');
+                        }
+                };
+        },
+
     setLoaded() {
         document.body.classList.add('loaded');
         setTimeout(() => {
