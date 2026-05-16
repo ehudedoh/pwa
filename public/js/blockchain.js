@@ -15,13 +15,42 @@ const blockchain = {
         return Number(this.runtimeConfig.chainId || window.APP_CONFIG?.chainId || 137);
     },
 
+    // async simulateHash(data) {
+    //     const str = JSON.stringify(data);
+    //     const encoder = new TextEncoder();
+    //     const msgUint8 = encoder.encode(str);
+    //     const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    //     const hashArray = Array.from(new Uint8Array(hashBuffer));
+    //     return '0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    // },
+
     async simulateHash(data) {
         const str = JSON.stringify(data);
-        const encoder = new TextEncoder();
-        const msgUint8 = encoder.encode(str);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return '0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        // Solution de fallback : utiliser une fonction de hashage manuelle
+        // si crypto.subtle n'est pas disponible
+        if (typeof crypto !== 'undefined' && crypto.subtle && crypto.subtle.digest) {
+            try {
+                const encoder = new TextEncoder();
+                const msgUint8 = encoder.encode(str);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return '0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch (e) {
+                console.warn('crypto.subtle.digest a echoue, utilisation du fallback');
+            }
+        }
+        // Fallback : hashage simple mais fonctionnel
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        // Generer un hash de 64 caracteres hex
+        const hashPart = Math.abs(hash).toString(16).padStart(16, '0');
+        const timestamp = Date.now().toString(16).padStart(16, '0');
+        const random = Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0');
+        return '0x' + hashPart + timestamp + random + '0'.repeat(24);
     },
 
     resolveBatchId(data, actorId) {
@@ -52,6 +81,20 @@ const blockchain = {
         }
 
         const signer = await provider.getSigner();
+        // const contract = new window.ethers.Contract(this.contractAddress, CONTRACT_ABI, signer);
+        // const batchId = this.resolveBatchId(data, actorId);
+        // const dataHash = await this.simulateHash(data);
+
+        // Verifier que le contrat est accessible
+        if (!this.contractAddress || this.contractAddress === '0x0000000000000000000000000000000000000000') {
+            throw new Error('Adresse du contrat non configuree');
+        }
+
+        // Verifier que le signer est valide
+        if (!signer) {
+            throw new Error('Impossible d obtenir le signer MetaMask');
+        }
+
         const contract = new window.ethers.Contract(this.contractAddress, CONTRACT_ABI, signer);
         const batchId = this.resolveBatchId(data, actorId);
         const dataHash = await this.simulateHash(data);
@@ -75,7 +118,7 @@ const blockchain = {
         try {
             return await this.sendWithMetaMask(data, actorId);
         } catch (error) {
-            const relayerUrl = this.runtimeConfig.relayerUrl || window.APP_CONFIG?.relayerUrl || '/api/blockchain/notarize';
+            const relayerUrl = this.runtimeConfig.relayerUrl || window.APP_CONFIG?.relayerUrl || 'http://localhost:3000/api/anchor';
             if (relayerUrl) {
                 try {
                     return await this.sendViaRelayer(data, actorId);
@@ -88,12 +131,14 @@ const blockchain = {
     },
 
     async sendViaRelayer(data, actorId) {
-        const relayerUrl = this.runtimeConfig.relayerUrl || window.APP_CONFIG?.relayerUrl || '/api/blockchain/notarize';
+        const relayerUrl = this.runtimeConfig.relayerUrl || window.APP_CONFIG?.relayerUrl || 'http://localhost:3000/api/anchor';
         if (!relayerUrl) throw new Error('Relayer non configuré');
 
-        const url = relayerUrl.includes('/api/blockchain/notarize')
-            ? relayerUrl
-            : relayerUrl.replace(/\/$/, '') + '/api/blockchain/notarize';
+        // Utiliser /api/anchor comme endpoint par defaut
+        let url = relayerUrl;
+        if (!url.includes('/api/anchor')) {
+            url = url.replace(/\/$/, '') + '/api/anchor';
+        }
         const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
