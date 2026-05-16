@@ -118,7 +118,10 @@ const blockchain = {
         try {
             return await this.sendWithMetaMask(data, actorId);
         } catch (error) {
-            const relayerUrl = this.runtimeConfig.relayerUrl || window.APP_CONFIG?.relayerUrl || 'http://localhost:3000/api/anchor';
+            const relayerUrl =
+                this.runtimeConfig.relayerUrl ||
+                window.APP_CONFIG?.relayerUrl ||
+                'https://pwa-production-d9cd.up.railway.app/api/anchor';
             if (relayerUrl) {
                 try {
                     return await this.sendViaRelayer(data, actorId);
@@ -131,7 +134,10 @@ const blockchain = {
     },
 
     async sendViaRelayer(data, actorId) {
-        const relayerUrl = this.runtimeConfig.relayerUrl || window.APP_CONFIG?.relayerUrl || 'http://localhost:3000/api/anchor';
+        const relayerUrl =
+            this.runtimeConfig.relayerUrl ||
+            window.APP_CONFIG?.relayerUrl ||
+            'https://pwa-production-d9cd.up.railway.app/api/anchor';
         if (!relayerUrl) throw new Error('Relayer non configuré');
 
         // Utiliser /api/anchor comme endpoint par defaut
