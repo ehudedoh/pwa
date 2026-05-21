@@ -143,11 +143,11 @@ app.post('/api/anchor', async (req, res) => {
   }
 });
 
-// app.listen(PORT, '0.0.0.0', () => {
-//   console.log(`Relayer ChainCacao demarre sur http://localhost:${PORT}`);
-//   console.log(`Test: http://localhost:${PORT}/health`);
-// });
-
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`ChainCacao relayer listening on port ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Relayer ChainCacao demarre sur http://localhost:${PORT}`);
+  console.log(`Test: http://localhost:${PORT}/health`);
 });
+
+// app.listen(PORT, '0.0.0.0', () => {
+//   console.log(`ChainCacao relayer listening on port ${PORT}`);
+// });
